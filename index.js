@@ -41,7 +41,6 @@ async function run() {
       const movies = await movieCollection
         .find({ genre: { $regex: genreName, $options: "i" } }) 
         .toArray();
-
       res.send(movies);
    
   });
@@ -134,7 +133,7 @@ async function run() {
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
-  res.send("MovieVerse API is running...");
+  res.send("MovieVerse API is running..");
 });
 
 app.get("/movies/:id", (req, res) => {
