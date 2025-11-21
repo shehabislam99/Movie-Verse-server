@@ -87,38 +87,34 @@ async function run() {
     });
 
     app.get("/single-movies", async (req, res) => {
-      console.log(req.query)
       const {id} = req.query
       const query = {_id: new ObjectId(id)}
       const result = await movieCollection.findOne(query);
       res.send(result);
     });
        
-    app.post("/movie", async (req, res) => {
+    app.post("/add-movie", async (req, res) => {
       const data = req.body;
       const result = await movieCollection.insertOne(data);
       res.send(result);
     });
-  app.put('/update-movie/:id',async(res,req)=>{
-    const id = req.params.id
-    const data = req.body
-    const query = {_id:new ObjectId(id)}
+app.put("/update-movie/:id", async (req, res) => {
+  const id = req.params.id;
+  const data = req.body;
+  delete data._id; 
+  const query = { _id: new ObjectId(id) };
 
-    const updateMovie = {
-      $set: data
-    }
-    const result = await movieCollection.updateOne(query,updateMovie)
-    res.send(result)
-  })
+  const updateMovie = { $set: data };
+
+    const result = await movieCollection.updateOne(query, updateMovie);
+    res.send(result);
+
+});
    app.delete("/delete-movie/:id", async (res, req) => {
-     const id = req.params.id;
-     const data = req.body;
+     const {id} = req.query;
+    
      const query = { _id: new ObjectId(id) };
-
-     const updateMovie = {
-       $set: data,
-     };
-     const result = await movieCollection.updateOne(query, updateMovie);
+     const result = await movieCollection.deleteOne(query);
      res.send(result);
    });
     await client.db("admin").command({ ping: 1 });
