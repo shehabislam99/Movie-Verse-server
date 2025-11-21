@@ -110,13 +110,37 @@ app.put("/update-movie/:id", async (req, res) => {
     res.send(result);
 
 });
-   app.delete("/delete-movie", async (req, res) => {
-     const {id} = req.query;
-     const query = { _id: new ObjectId(id) };
+ app.delete("/delete-movie", async (req, res) => {
+   const { id } = req.query;
+   const query = { _id: new ObjectId(id) };
 
-     const result = await movieCollection.deleteOne(query);
-     res.send(result);
-   });
+   const result = await movieCollection.deleteOne(query);
+   res.send(result);
+ });
+const collectionCollection = db.collection("collection");
+app.post("/add-to-collection", async (req, res) => {
+  
+    const data = req.body;
+
+    const result = await collectionCollection.insertOne(data);
+    res.json( result);
+  } 
+);
+app.get("/get-all-collection", async (req, res) => {
+  
+    const result = await collectionCollection.find().toArray();
+    res.json(result);
+  });
+
+app.delete("/delete-collection", async (req, res) => {
+    const { id } = req.query;
+    const result = await collectionCollection.deleteOne({
+      _id: new ObjectId(id),
+    });
+    res.json( result );
+  
+});
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
