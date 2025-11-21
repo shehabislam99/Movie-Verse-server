@@ -110,10 +110,10 @@ app.put("/update-movie/:id", async (req, res) => {
     res.send(result);
 
 });
-   app.delete("/delete-movie/:id", async (res, req) => {
+   app.delete("/delete-movie", async (req, res) => {
      const {id} = req.query;
-    
      const query = { _id: new ObjectId(id) };
+
      const result = await movieCollection.deleteOne(query);
      res.send(result);
    });
