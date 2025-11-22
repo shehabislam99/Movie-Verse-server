@@ -1,14 +1,21 @@
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const { credential } = require("firebase-admin");
 const app = express();
 const port = process.env.PORT || 3000;
 
+var admin = require("firebase-admin");
+
+var serviceAccount = require("path/to/serviceAccountKey.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 app.use(cors());
 app.use(express.json());
 
-const uri =
-  "mongodb+srv://shihabkhanahab_db_user:uQP90nYtqhBjLwy1@cluster0.dv2qqne.mongodb.net/?appName=Cluster0";
+const uri = `mongodb+srv://${process.env.Db_USERNAME}:${process.env.Db_Password}.dv2qqne.mongodb.net/?appName=Cluster0`;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -25,23 +32,26 @@ async function run() {
     const db = client.db("Movie-data");
     const movieCollection = db.collection("movie");
 
-    app.get("/top-rated-movies", async (req, res) => {
-      const { minRating = 0, maxRating = 10 } = req.query;
+app.get("/top-rated-movies", async (req, res) => {
+  const min = parseFloat(req.query.minRating) || 0;
+  const max = parseFloat(req.query.maxRating) || 10;
 
-      const result = await movieCollection
-        .find({
-          rating: {
-            $ne: null,
-            $gte: parseFloat(minRating),
-            $lte: parseFloat(maxRating),
-          },
-        })
-        .sort({ rating: -1 })
-        .limit(5)
-        .toArray();
+  const allMovies = await movieCollection
+    .find({ rating: { $ne: null, $exists: true } })
+    .toArray();
 
-      res.send(result);
-    });
+  const topRatedMovies = allMovies
+    .map((movie) => ({
+      ...movie,
+      numericRating: parseFloat(movie.rating) || 0,
+    }))
+    .filter((movie) => movie.numericRating >= min && movie.numericRating <= max)
+    .sort((a, b) => b.numericRating - a.numericRating)
+    .slice(0, 5)
+    .map(({ numericRating, ...movie }) => movie);
+
+  res.send(topRatedMovies);
+});
 
     app.get("/recent-movies", async (req, res) => {
       const result = await movieCollection
@@ -112,6 +122,15 @@ async function run() {
       const result = await movieCollection.insertOne(data);
       res.send(result);
     });
+       app.get("/my-movie-watchlist", async (req, res) => {
+           const { email } = req.query;   
+           const result = await movieCollection
+             .find({ addedBy: email })
+             .sort({ _id: -1 })
+             .toArray();
+           res.send(result);
+         
+       });
     app.put("/update-movie/:id", async (req, res) => {
       const id = req.params.id;
       const data = req.body;
