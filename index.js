@@ -1,21 +1,25 @@
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const { credential } = require("firebase-admin");
+
 const app = express();
 const port = process.env.PORT || 3000;
 
-var admin = require("firebase-admin");
-
-var serviceAccount = require("./movie-verse-sdk.json");
+// Firebase admin
+const admin = require("firebase-admin");
+const serviceAccount = require("./movie-verse-sdk.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
+
 app.use(cors());
 app.use(express.json());
 
-const uri = `mongodb+srv://${process.env.Db_USERNAME}:${process.env.Db_Password}.dv2qqne.mongodb.net/?appName=Cluster0`;
+// FIXED MONGODB URI
+const uri = `mongodb+srv://${process.env.Db_USERNAME}:${process.env.Db_Password}@dv2qqne.mongodb.net/?appName=Cluster0`;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -27,31 +31,31 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
-
     const db = client.db("Movie-data");
     const movieCollection = db.collection("movie");
 
-app.get("/top-rated-movies", async (req, res) => {
-  const min = parseFloat(req.query.minRating) || 0;
-  const max = parseFloat(req.query.maxRating) || 10;
+    app.get("/top-rated-movies", async (req, res) => {
+      const min = parseFloat(req.query.minRating) || 0;
+      const max = parseFloat(req.query.maxRating) || 10;
 
-  const allMovies = await movieCollection
-    .find({ rating: { $ne: null, $exists: true } })
-    .toArray();
+      const allMovies = await movieCollection
+        .find({ rating: { $ne: null, $exists: true } })
+        .toArray();
 
-  const topRatedMovies = allMovies
-    .map((movie) => ({
-      ...movie,
-      numericRating: parseFloat(movie.rating) || 0,
-    }))
-    .filter((movie) => movie.numericRating >= min && movie.numericRating <= max)
-    .sort((a, b) => b.numericRating - a.numericRating)
-    .slice(0, 5)
-    .map(({ numericRating, ...movie }) => movie);
+      const topRatedMovies = allMovies
+        .map((movie) => ({
+          ...movie,
+          numericRating: parseFloat(movie.rating) || 0,
+        }))
+        .filter(
+          (movie) => movie.numericRating >= min && movie.numericRating <= max
+        )
+        .sort((a, b) => b.numericRating - a.numericRating)
+        .slice(0, 5)
+        .map(({ numericRating, ...movie }) => movie);
 
-  res.send(topRatedMovies);
-});
+      res.send(topRatedMovies);
+    });
 
     app.get("/recent-movies", async (req, res) => {
       const result = await movieCollection
@@ -122,15 +126,14 @@ app.get("/top-rated-movies", async (req, res) => {
       const result = await movieCollection.insertOne(data);
       res.send(result);
     });
-       app.get("/my-movie-watchlist", async (req, res) => {
-           const { email } = req.query;   
-           const result = await movieCollection
-             .find({ addedBy: email })
-             .sort({ _id: -1 })
-             .toArray();
-           res.send(result);
-         
-       });
+    app.get("/my-movie-watchlist", async (req, res) => {
+      const { email } = req.query;
+      const result = await movieCollection
+        .find({ addedBy: email })
+        .sort({ _id: -1 })
+        .toArray();
+      res.send(result);
+    });
     app.put("/update-movie/:id", async (req, res) => {
       const id = req.params.id;
       const data = req.body;
@@ -171,7 +174,7 @@ app.get("/top-rated-movies", async (req, res) => {
       res.json(result);
     });
 
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
@@ -180,18 +183,10 @@ app.get("/top-rated-movies", async (req, res) => {
     // await client.close();
   }
 }
-run().catch(console.dir);
+run();
 
 app.get("/", (req, res) => {
-  res.send("MovieVerse API is running..");
+  res.json("MovieVerse API is running...");
 });
 
-app.get("/movies/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  console.log("i need data for id:", id);
-  res.send(`Movie ID: ${id} - use /api/movies/${id} for the API`);
-});
-
-app.listen(port, () => {
-  console.log(`MovieMaster Pro server is running on port: ${port}`);
-});
+module.exports = app;
