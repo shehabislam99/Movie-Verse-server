@@ -7,7 +7,7 @@ const port = process.env.PORT || 3000;
 
 var admin = require("firebase-admin");
 
-var serviceAccount = require("path/to/serviceAccountKey.json");
+var serviceAccount = require("./movie-verse-sdk.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
