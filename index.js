@@ -24,62 +24,76 @@ async function run() {
 
     const db = client.db("Movie-data");
     const movieCollection = db.collection("movie");
-  
-  app.get("/top-rated-movies", async (req, res) => {
-  
-    const result = await movieCollection
-      .find({ rating: { $ne: null } })
-      .sort({ rating: -1 }) 
-      .limit(5) 
-      .toArray();
 
-    res.send(result);
-  });
-  app.get("/movies-by-genre/:genreName", async (req, res) => {
+    app.get("/top-rated-movies", async (req, res) => {
+      const { minRating = 0, maxRating = 10 } = req.query;
+
+      const result = await movieCollection
+        .find({
+          rating: {
+            $ne: null,
+            $gte: parseFloat(minRating),
+            $lte: parseFloat(maxRating),
+          },
+        })
+        .sort({ rating: -1 })
+        .limit(5)
+        .toArray();
+
+      res.send(result);
+    });
+
+    app.get("/recent-movies", async (req, res) => {
+      const result = await movieCollection
+        .find({})
+        .sort({ _id: -1 })
+        .limit(10)
+        .toArray();
+      res.send(result);
+    });
+    app.get("/movies-by-genre/:genreName", async (req, res) => {
       const genreName = req.params.genreName;
 
       const movies = await movieCollection
-        .find({ genre: { $regex: genreName, $options: "i" } }) 
+        .find({ genre: { $in: [genreName] } })
         .toArray();
+
       res.send(movies);
-   
-  });
-    app.get("/stats", async (req, res) => {
-        const totalMovies = await movieCollection.countDocuments();
-
-        const allMovies = await movieCollection.find({}).toArray();
-
-        const validRatings = allMovies
-          .map((m) => {
-            const r = parseFloat(m.rating);
-            return isNaN(r) ? null : r;
-          })
-          .filter((r) => r !== null && r > 0);
-
-        const averageRating =
-          validRatings.length > 0
-            ? Number(
-                (
-                  validRatings.reduce((a, b) => a + b, 0) / validRatings.length
-                ).toFixed(1)
-              )
-            : 0;
-
-       
-        const genres = await movieCollection
-          .aggregate([{ $unwind: "$genre" },
-             { $group: { _id: "$genre" } }])
-          .toArray();
-
-        const totalGenres = genres.length;
-
-        res.json({
-          totalMovies,
-          averageRating,
-          totalGenres,
-        });
     });
 
+    app.get("/stats", async (req, res) => {
+      const totalMovies = await movieCollection.countDocuments();
+
+      const allMovies = await movieCollection.find({}).toArray();
+
+      const validRatings = allMovies
+        .map((m) => {
+          const r = parseFloat(m.rating);
+          return isNaN(r) ? null : r;
+        })
+        .filter((r) => r !== null && r > 0);
+
+      const averageRating =
+        validRatings.length > 0
+          ? Number(
+              (
+                validRatings.reduce((a, b) => a + b, 0) / validRatings.length
+              ).toFixed(1)
+            )
+          : 0;
+
+      const genres = await movieCollection
+        .aggregate([{ $unwind: "$genre" }, { $group: { _id: "$genre" } }])
+        .toArray();
+
+      const totalGenres = genres.length;
+
+      res.json({
+        totalMovies,
+        averageRating,
+        totalGenres,
+      });
+    });
 
     app.get("/get-all-movies", async (req, res) => {
       const result = await movieCollection.find().toArray();
@@ -87,59 +101,56 @@ async function run() {
     });
 
     app.get("/single-movies", async (req, res) => {
-      const {id} = req.query
-      const query = {_id: new ObjectId(id)}
+      const { id } = req.query;
+      const query = { _id: new ObjectId(id) };
       const result = await movieCollection.findOne(query);
       res.send(result);
     });
-       
+
     app.post("/add-movie", async (req, res) => {
       const data = req.body;
       const result = await movieCollection.insertOne(data);
       res.send(result);
     });
-app.put("/update-movie/:id", async (req, res) => {
-  const id = req.params.id;
-  const data = req.body;
-  delete data._id; 
-  const query = { _id: new ObjectId(id) };
+    app.put("/update-movie/:id", async (req, res) => {
+      const id = req.params.id;
+      const data = req.body;
+      delete data._id;
+      const query = { _id: new ObjectId(id) };
 
-  const updateMovie = { $set: data };
+      const updateMovie = { $set: data };
 
-    const result = await movieCollection.updateOne(query, updateMovie);
-    res.send(result);
-
-});
- app.delete("/delete-movie", async (req, res) => {
-   const { id } = req.query;
-   const query = { _id: new ObjectId(id) };
-
-   const result = await movieCollection.deleteOne(query);
-   res.send(result);
- });
-const collectionCollection = db.collection("collection");
-app.post("/add-to-collection", async (req, res) => {
-  
-    const data = req.body;
-
-    const result = await collectionCollection.insertOne(data);
-    res.json( result);
-  } 
-);
-app.get("/get-all-collection", async (req, res) => {
-  
-    const result = await collectionCollection.find().toArray();
-    res.json(result);
-  });
-
-app.delete("/delete-collection", async (req, res) => {
-    const { id } = req.query;
-    const result = await collectionCollection.deleteOne({
-      _id: new ObjectId(id),
+      const result = await movieCollection.updateOne(query, updateMovie);
+      res.send(result);
     });
-    res.json( result );
-  
-});
+    app.delete("/delete-movie", async (req, res) => {
+      const { id } = req.query;
+      const query = { _id: new ObjectId(id) };
+
+      const result = await movieCollection.deleteOne(query);
+      res.send(result);
+    });
+    const collectionCollection = db.collection("collection");
+    app.post("/add-to-collection", async (req, res) => {
+      const data = req.body;
+
+      const result = await collectionCollection.insertOne(data);
+      res.json(result);
+    });
+    app.get("/get-all-collection", async (req, res) => {
+      const email = req.query.email;
+      const query = email ? { addedBy: email } : {};
+      const result = await collectionCollection.find(query).toArray();
+      res.json(result);
+    });
+
+    app.delete("/delete-collection", async (req, res) => {
+      const { id } = req.query;
+      const result = await collectionCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+      res.json(result);
+    });
 
     await client.db("admin").command({ ping: 1 });
     console.log(
