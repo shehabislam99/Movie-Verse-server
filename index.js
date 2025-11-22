@@ -1,13 +1,13 @@
 require("dotenv").config();
-
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+// const { credential } = require("firebase-admin");
+
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Firebase admin
 const admin = require("firebase-admin");
 const serviceAccount = require("./movie-verse-sdk.json");
 
@@ -17,8 +17,6 @@ admin.initializeApp({
 
 app.use(cors());
 app.use(express.json());
-
-// FIXED MONGODB URI
 const uri = `mongodb+srv://${process.env.Db_USERNAME}:${process.env.Db_Password}@dv2qqne.mongodb.net/?appName=Cluster0`;
 
 const client = new MongoClient(uri, {
@@ -31,6 +29,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+      // await client.connect();
     const db = client.db("Movie-data");
     const movieCollection = db.collection("movie");
 
