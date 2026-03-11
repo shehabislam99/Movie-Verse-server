@@ -8,8 +8,12 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 3000;
 
+//key converter
 const admin = require("firebase-admin");
-const serviceAccount = require("./movie-verse-sdk.json");
+const decoded = Buffer.from(process.env.FB_SERVICE_KEY, "base64").toString(
+  "utf8",
+);
+const serviceAccount = JSON.parse(decoded);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -17,13 +21,13 @@ admin.initializeApp({
 
 app.use(cors());
 app.use(express.json());
-const uri = `mongodb+srv://${process.env.Db_USERNAME}:${process.env.Db_Password}@dv2qqne.mongodb.net/?appName=Cluster0`;
+const uri = `mongodb+srv://${process.env.Db_USERNAME}:${process.env.Db_Password}@cluster0.dv2qqne.mongodb.net/?appName=Cluster0`;
 
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
-    deprecationErrors: true,
+    deprecationErrors: true
   },
 });
 
@@ -111,12 +115,14 @@ async function run() {
     app.get("/get-all-movies", async (req, res) => {
       const result = await movieCollection.find().toArray();
       res.send(result);
+        console.log(result);
     });
 
     app.get("/single-movies", async (req, res) => {
       const { id } = req.query;
       const query = { _id: new ObjectId(id) };
       const result = await movieCollection.findOne(query);
+      console.log(result);
       res.send(result);
     });
 
@@ -186,6 +192,10 @@ run();
 
 app.get("/", (req, res) => {
   res.json("MovieVerse API is running...");
+});
+
+app.listen(port, () => {
+  console.log(`MovieVerse API listening on http://localhost:${port}`);
 });
 
 module.exports = app;

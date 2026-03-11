@@ -15,7 +15,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-validator": "^7.3.0",
-    "firebase-admin": "^13.6.0",
+    "firebase-admin": "^13.6.1",
     "mongodb": "^7.0.0",
     "mongoose": "^8.19.3",
     "monodb": "^1.5.1"
