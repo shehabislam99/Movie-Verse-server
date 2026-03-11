@@ -115,14 +115,14 @@ async function run() {
     app.get("/get-all-movies", async (req, res) => {
       const result = await movieCollection.find().toArray();
       res.send(result);
-        console.log(result);
+      // console.log(result);
     });
 
     app.get("/single-movies", async (req, res) => {
       const { id } = req.query;
       const query = { _id: new ObjectId(id) };
       const result = await movieCollection.findOne(query);
-      console.log(result);
+      // console.log(result);
       res.send(result);
     });
 
@@ -180,9 +180,9 @@ async function run() {
     });
 
     // await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
@@ -195,7 +195,7 @@ app.get("/", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`MovieVerse API listening on http://localhost:${port}`);
+  // console.log(`MovieVerse API listening on http://localhost:${port}`);
 });
 
 module.exports = app;
